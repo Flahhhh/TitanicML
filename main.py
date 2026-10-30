@@ -4,6 +4,7 @@ from pandas import DataFrame
 import pandas as pd
 import numpy as np
 from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, OrdinalEncoder
@@ -54,13 +55,24 @@ feature_cols = [
     "HomePlanet", "CryoSleep", "Cabin_deck", "Cabin_num", "Cabin_side", "Destination", "Age", "VIP",
     "RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck"
 ]
-categorical_features = ["HomePlanet", "Cabin_deck", "Cabin_side", "Destination"]
+categorical_features = ["HomePlanet", "Cabin_deck", "Cabin_side", "Destination", "LastName", "Group", "CryoSleep", "VIP"]
+numerical_features = ["Cabin_num", "Age", "RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck", "TotalSpend"]
+
 target_col = "Transported"
 train_df = transform_data(train_df)
 
 column_transformer = ColumnTransformer(
-    transformers=[("cat", OneHotEncoder(), categorical_features)],
-    remainder="passthrough"
+    transformers=[
+        ("cat", Pipeline([
+            ("imputer", SimpleImputer(strategy="most_frequent")),
+            ("encoder", OneHotEncoder(handle_unknown="ignore"))
+        ]), categorical_features),
+
+        ("num", Pipeline([
+            ("imputer", SimpleImputer(strategy="median"))
+        ]), numerical_features),
+    ],
+    remainder="drop"
 )
 
 

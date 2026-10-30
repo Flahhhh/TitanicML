@@ -2,30 +2,34 @@ from pandas import DataFrame
 import pandas as pd
 
 def transform_data(frame: DataFrame):
-    frame = frame.drop(labels="Name", axis=1)
-    frame = frame.drop(labels="PassengerId", axis=1)
+    spend_cols = ["RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck"]
 
-    categorical_features = ["HomePlanet", "Cabin", "Destination"]
-    feature_cols = [
-        "HomePlanet", "CryoSleep", "Cabin", "Destination", "Age", "VIP",
-        "RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck"
-    ]
-    for col in feature_cols:
-        if col in categorical_features:
-            frame[col] = frame[col].astype("category")
-            frame[col] = frame[col].fillna(frame[col].mode()[0])
-        else:
-            frame[col] = frame[col].fillna(frame[col].median())
+    frame[spend_cols] = frame[spend_cols].fillna(0)
+    frame["TotalSpend"] = frame[spend_cols].sum(axis=1)
+    frame['LastName'] = frame['Name'].apply(lambda x: x.split(' ')[-1] if pd.notna(x) else 'Unknown')
+    frame["Group"] = frame["PassengerId"].apply(lambda x: x.split('_')[0])
+
+    #categorical_features = ["HomePlanet", "Cabin", "Destination"]
+    #feature_cols = [
+    #    "HomePlanet", "CryoSleep", "Cabin", "Destination", "Age", "VIP",
+    #    "RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck"
+    #]
+    #for col in feature_cols:
+    #    if col in categorical_features:
+    #        frame[col] = frame[col].astype("category")
+    #        frame[col] = frame[col].fillna(frame[col].mode()[0])
+    #    else:
+    #        frame[col] = frame[col].fillna(frame[col].median())
 
     frame["VIP"] = frame["VIP"].astype(bool)
     frame["CryoSleep"] = frame["CryoSleep"].astype(bool)
 
-    cabin_data = list(zip(*map(lambda s: s.split("/"), frame["Cabin"].tolist())))
+    cabin_data = frame["Cabin"].str.split("/", expand=True)
     frame["Cabin_deck"] = cabin_data[0]
     frame["Cabin_num"] = pd.to_numeric(cabin_data[1])
     frame["Cabin_side"] = cabin_data[2]
     #frame = pd.get_dummies(frame, columns=["HomePlanet", "Cabin_deck", "Cabin_side", "Destination"])
-    frame = frame.drop(labels="Cabin", axis=1)
+    frame = frame.drop(labels=["Cabin", "Name", "PassengerId"], axis=1, errors='ignore')
 
     return frame
 
